@@ -1,22 +1,17 @@
-﻿using Microsoft.Win32;
+﻿using Microsoft.Web.WebView2.Core;
+using Microsoft.Win32;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
-using System.Net.Http.Json;
+using System.Security;
+using System.Security.Cryptography;
 using System.Text;
-using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace CodeGenerator
 {
@@ -25,14 +20,85 @@ namespace CodeGenerator
     /// </summary>
     public partial class MainWindow : Window
     {
-        private const string API_KEY = "";
         private const string API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
-        private string rootFolder;
+        public string RootFolder { get; set; }
+        private string ApiKey;
+        private string apiKeyFilePath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "apikey.dat");
 
         public MainWindow()
         {
             InitializeComponent();
+            LoadApiKey();
             InitializeLanguageComboBox();
+            RootFolder = "C:\\";
+            this.DataContext = this;
+            UpdateFolderTreeView();
+            InitializeAsync();
+        }
+
+        async void InitializeAsync()
+        {
+            await PromptTextArea.EnsureCoreWebView2Async(null);
+
+            // ローカルで静的ファイルをホストする場合
+            var exePath = AppDomain.CurrentDomain.BaseDirectory;
+            var htmlPath = Path.Combine(exePath, "Editor\\monaco\\dist\\index.html");
+
+            PromptTextArea.CoreWebView2.SetVirtualHostNameToFolderMapping(
+    "appassets",
+    new FileInfo(htmlPath).DirectoryName,
+    Microsoft.Web.WebView2.Core.CoreWebView2HostResourceAccessKind.Allow);
+            PromptTextArea.CoreWebView2.Navigate("http://appassets/index.html");
+        }
+
+
+        private void LoadApiKey()
+        {
+            if (File.Exists(apiKeyFilePath))
+            {
+                try
+                {
+                    byte[] encryptedApiKey = File.ReadAllBytes(apiKeyFilePath);
+                    byte[] apiKeyBytes = ProtectedData.Unprotect(encryptedApiKey, null, DataProtectionScope.CurrentUser);
+                    string apiKey = Encoding.UTF8.GetString(apiKeyBytes);
+                    this.ApiKey = apiKey;
+                }
+                catch (Exception ex)
+                {
+                    this.ApiKey = null;
+                    StatusTextBlock.Text = $"APIキーの読み込みに失敗しました: {ex.Message}";
+                }
+            }
+            else
+            {
+                this.ApiKey = null;
+            }
+        }
+        private void SaveApiKey(string apiKey)
+        {
+            byte[] apiKeyBytes = Encoding.UTF8.GetBytes(apiKey);
+            byte[] encryptedApiKey = ProtectedData.Protect(apiKeyBytes, null, DataProtectionScope.CurrentUser);
+            File.WriteAllBytes(apiKeyFilePath, encryptedApiKey);
+        }
+
+        private void MenuItem_InputApiKey_Click(object sender, RoutedEventArgs e)
+        {
+            var apiKeyWindow = new ApiKeyInputWindow();
+            apiKeyWindow.Owner = this;
+            if (apiKeyWindow.ShowDialog() == true)
+            {
+                var apiKey = apiKeyWindow.ApiKey;
+                if (!string.IsNullOrWhiteSpace(apiKey))
+                {
+                    SaveApiKey(apiKey);
+                    LoadApiKey();
+                    StatusTextBlock.Text = "APIキーを保存しました。";
+                }
+                else
+                {
+                    StatusTextBlock.Text = "APIキーが空です。";
+                }
+            }
         }
 
         private void SelectRootFolder_Click(object sender, RoutedEventArgs e)
@@ -44,7 +110,7 @@ namespace CodeGenerator
 
             if (dialog.ShowDialog() == true)
             {
-                rootFolder = dialog.FolderName;
+                RootFolder = dialog.FolderName;
                 UpdateFolderTreeView();
             }
         }
@@ -52,7 +118,7 @@ namespace CodeGenerator
         private void UpdateFolderTreeView()
         {
             FolderTreeView.Items.Clear();
-            var rootItem = new FolderTreeItem(new DirectoryInfo(rootFolder));
+            var rootItem = new FolderTreeItem(new DirectoryInfo(RootFolder));
             rootItem.Items.Add(DummyTreeViewItem());
             rootItem.IsSelected = true;
             FolderTreeView.Items.Add(rootItem);
@@ -97,9 +163,9 @@ namespace CodeGenerator
                 "fish",
                 "bat",
                 "C#",
-                "C#+WPF", 
-                "ASP.NET Core", 
-                "Rust", 
+                "C#+WPF",
+                "ASP.NET Core",
+                "Rust",
                 "Python",
                 "Json"
             };
@@ -111,7 +177,7 @@ namespace CodeGenerator
 
         private async void GenerateButton_Click(object sender, RoutedEventArgs e)
         {
-            string prompt = PromptTextArea.Text;
+            string prompt = await GetTextAsync();
             string selectedLanguage = LanguageComboBox.SelectedItem as string;
 
             if (string.IsNullOrWhiteSpace(prompt))
@@ -131,8 +197,37 @@ namespace CodeGenerator
             }
         }
 
+        public async void SetText(string text)
+        {
+            await PromptTextArea.CoreWebView2.ExecuteScriptAsync($"setText(`{text.Replace("`", "\\`")}`)");
+        }
 
-private async Task<string> GenerateCodeWithGemini(string prompt, string language)
+        // テキストを取得するメソッド
+        public async Task<string> GetTextAsync()
+        {
+            var tcs = new TaskCompletionSource<string>();
+
+            // WebMessageReceivedイベントをサブスクライブして、メッセージを受信
+            PromptTextArea.CoreWebView2.WebMessageReceived += (sender, args) =>
+            {
+                var message = args.WebMessageAsJson;
+                var json = JsonConvert.DeserializeObject<dynamic>(message);
+
+                if (json.action == "getTextResult")
+                {
+                    string text = json.text;
+                    tcs.SetResult(text);  // 結果をセット
+                }
+            };
+
+            // JavaScriptの関数を実行
+            var resut = await PromptTextArea.CoreWebView2.ExecuteScriptAsync("window.getText()");
+
+            // 非同期で結果を待つ
+            return JsonConvert.DeserializeObject<string>(resut);
+        }
+
+        private async Task<string> GenerateCodeWithGemini(string prompt, string language)
         {
             using (var client = new HttpClient())
             {
@@ -153,7 +248,7 @@ private async Task<string> GenerateCodeWithGemini(string prompt, string language
                 var json = JsonConvert.SerializeObject(request);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                client.DefaultRequestHeaders.Add("x-goog-api-key", API_KEY);
+                client.DefaultRequestHeaders.Add("x-goog-api-key", ApiKey);
 
                 var response = await client.PostAsync($"{API_URL}", content);
                 var responseString = await response.Content.ReadAsStringAsync();
@@ -197,33 +292,33 @@ private async Task<string> GenerateCodeWithGemini(string prompt, string language
         }
 
         private void SaveGeneratedContent(string generatedContent, string outputFolder)
-    {
-        var codeBlocks = Regex.Matches(generatedContent, @"```(\w+)\r?\n([\s\S]*?)\r?\n```");
-        
-        if (codeBlocks.Count > 0)
         {
-            foreach (Match codeBlock in codeBlocks)
+            var codeBlocks = Regex.Matches(generatedContent, @"```(\w+)\r?\n([\s\S]*?)\r?\n```");
+
+            if (codeBlocks.Count > 0)
             {
-                string language = codeBlock.Groups[1].Value.ToLower();
-                string code = codeBlock.Groups[2].Value.Trim();
+                foreach (Match codeBlock in codeBlocks)
+                {
+                    string language = codeBlock.Groups[1].Value.ToLower();
+                    string code = codeBlock.Groups[2].Value.Trim();
 
-                string filename = DetermineFilename(language, code);
-                string filePath = System.IO.Path.Combine(outputFolder, filename);
+                    string filename = DetermineFilename(language, code);
+                    string filePath = System.IO.Path.Combine(outputFolder, filename);
 
-                File.WriteAllText(filePath, code);
+                    File.WriteAllText(filePath, code);
+                }
             }
-        }
-        else
-        {
-            // コードブロックがない場合、全体をマークダウンファイルとして保存
-            string filePath = System.IO.Path.Combine(outputFolder, "generated_content.md");
-            File.WriteAllText(filePath, generatedContent);
+            else
+            {
+                // コードブロックがない場合、全体をマークダウンファイルとして保存
+                string filePath = System.IO.Path.Combine(outputFolder, "generated_content.md");
+                File.WriteAllText(filePath, generatedContent);
+            }
+
+            MessageBox.Show($"ファイルが {outputFolder} に保存されました。");
         }
 
-        MessageBox.Show($"ファイルが {outputFolder} に保存されました。");
-    }
-
- private string DetermineFilename(string language, string code)
+        private string DetermineFilename(string language, string code)
         {
             switch (language)
             {
@@ -264,13 +359,13 @@ private async Task<string> GenerateCodeWithGemini(string prompt, string language
                     //else if (csNamespaceMatch.Success)
                     //    return $"{csNamespaceMatch.Groups[1].Value}.cs";
                     //else
-                        return "Program.cs";
+                    return "Program.cs";
                 case "bat":
-                        return "Program.bat";
+                    return "Program.bat";
                 case "fish":
-                        return "Program.fish";
+                    return "Program.fish";
                 case "bash":
-                        return "Program.bash";
+                    return "Program.bash";
                 case "json":
                     return "Sample.json";
 
@@ -310,11 +405,15 @@ private async Task<string> GenerateCodeWithGemini(string prompt, string language
                 string fullClassName = match.Groups[1].Value;
                 string[] parts = fullClassName.Split('.');
                 var fileName = parts.Length > 0 ? parts[^1] : fullClassName;  // クラス名部分のみ取得
-                return fileName+".xaml";
+                return fileName + ".xaml";
             }
             return "MainWindow.xaml";
         }
 
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            UpdateFolderTreeView();
+        }
     }
     public class FolderTreeItem : TreeViewItem
     {
@@ -322,8 +421,111 @@ private async Task<string> GenerateCodeWithGemini(string prompt, string language
         {
             Info = info;
             Header = info.Name;
+
+            Expanded += Folder_Expanded;
+
+            // コンテキストメニュー
+            var contextMenu = new ContextMenu();
+            var menuItem = new MenuItem { Header = "エクスプローラーで表示" };
+            menuItem.Click += (s, e) => OpenInExplorer();
+            contextMenu.Items.Add(menuItem);
+            this.ContextMenu = contextMenu;
         }
 
         public DirectoryInfo Info { get; }
+
+        private void OpenInExplorer()
+        {
+            Process.Start("explorer.exe", $"\"{Info.FullName}\"");
+        }
+
+        private void Folder_Expanded(object sender, RoutedEventArgs e)
+        {
+            if (this.Items.Count == 1 && this.Items[0] is TreeViewItem dummyItem && dummyItem.Tag == null)
+            {
+                this.Items.Clear();
+                try
+                {
+                    // サブフォルダの追加
+                    foreach (var directory in Info.GetDirectories())
+                    {
+                        // システムフォルダを除外
+                        if ((directory.Attributes & FileAttributes.System) != FileAttributes.System)
+                        {
+                            var subItem = new FolderTreeItem(directory);
+                            subItem.Items.Add(new TreeViewItem());
+                            this.Items.Add(subItem);
+                        }
+                    }
+
+                    // ファイルの追加
+                    foreach (var file in Info.GetFiles())
+                    {
+                        // システムファイルを除外
+                        if ((file.Attributes & FileAttributes.System) != FileAttributes.System)
+                        {
+                            var fileItem = new FileTreeItem(file);
+                            this.Items.Add(fileItem);
+                        }
+                    }
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    // アクセス拒否
+                }
+            }
+        }
+    }
+
+    public class FileTreeItem : TreeViewItem
+    {
+        public FileTreeItem(FileInfo info)
+        {
+            Info = info;
+            Header = info.Name;
+
+            MouseEnter += FileTreeItem_MouseEnter;
+            MouseLeave += FileTreeItem_MouseLeave;
+
+            // コンテキストメニュー
+            var contextMenu = new ContextMenu();
+            var menuItem = new MenuItem { Header = "エクスプローラーで表示" };
+            menuItem.Click += (s, e) => OpenInExplorer();
+            contextMenu.Items.Add(menuItem);
+            this.ContextMenu = contextMenu;
+        }
+
+        public FileInfo Info { get; }
+
+        private void OpenInExplorer()
+        {
+            Process.Start("explorer.exe", $"/select,\"{Info.FullName}\"");
+        }
+
+        private void FileTreeItem_MouseEnter(object sender, MouseEventArgs e)
+        {
+            try
+            {
+                using (var stream = new FileStream(Info.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    using (var reader = new StreamReader(stream))
+                    {
+                        char[] buffer = new char[5000]; // 最大5000文字読み込み
+                        int numRead = reader.Read(buffer, 0, buffer.Length);
+                        string content = new string(buffer, 0, numRead);
+                        this.ToolTip = new ToolTip { Content = content, MaxWidth = 400, MaxHeight = 300 };
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                this.ToolTip = new ToolTip { Content = $"ファイルを読み込めません: {ex.Message}" };
+            }
+        }
+
+        private void FileTreeItem_MouseLeave(object sender, MouseEventArgs e)
+        {
+            this.ToolTip = null;
+        }
     }
 }
