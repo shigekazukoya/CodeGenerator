@@ -1,11 +1,9 @@
-﻿using Microsoft.Web.WebView2.Core;
-using Microsoft.Win32;
+﻿using Microsoft.Win32;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
-using System.Security;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -205,21 +203,6 @@ namespace CodeGenerator
         // テキストを取得するメソッド
         public async Task<string> GetTextAsync()
         {
-            var tcs = new TaskCompletionSource<string>();
-
-            // WebMessageReceivedイベントをサブスクライブして、メッセージを受信
-            PromptTextArea.CoreWebView2.WebMessageReceived += (sender, args) =>
-            {
-                var message = args.WebMessageAsJson;
-                var json = JsonConvert.DeserializeObject<dynamic>(message);
-
-                if (json.action == "getTextResult")
-                {
-                    string text = json.text;
-                    tcs.SetResult(text);  // 結果をセット
-                }
-            };
-
             // JavaScriptの関数を実行
             var resut = await PromptTextArea.CoreWebView2.ExecuteScriptAsync("window.getText()");
 
