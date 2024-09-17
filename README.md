@@ -13,6 +13,10 @@ VisualSutido 2022でビルドしてください。
 5. 生成をクリック
 6. ファイルに保存をクリック
 
+# Gemini API
+[Google AI Studio](https://ai.google.dev/aistudio?hl=ja)で取得できます。
+[API キーを取得 | Google AI Studio](https://aistudio.google.com/app/apikey)
+
 # その他
 - エディタ部分はローカルのMonaco Editorです。(ビルドした結果のhtmlを変更すれば動き変更できます)
 -  GeminiのAPIはexeのあるフォルダに暗号化して保存しています。
