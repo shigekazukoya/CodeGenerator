@@ -180,7 +180,8 @@ namespace CodeGenerator
 
             if (string.IsNullOrWhiteSpace(prompt))
             {
-                MessageBox.Show("プロンプトを入力してください。");
+                StatusTextBlock.Text = "プロンプトを入力してください。";
+
                 return;
             }
 
@@ -188,10 +189,11 @@ namespace CodeGenerator
             {
                 string generatedContent = await GenerateCodeWithGemini(prompt, selectedLanguage, FilePathTextBox.Text);
                 ResultTextBox.Text = generatedContent;
+                StatusTextBlock.Text = $"コード生成完了";
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"エラーが発生しました: {ex.Message}");
+                StatusTextBlock.Text = $"APIキーの読み込みに失敗しました: {ex.Message}";
             }
         }
 
@@ -212,6 +214,7 @@ namespace CodeGenerator
 
         private async Task<string> GenerateCodeWithGemini(string prompt, string language, string filePath = null)
         {
+            StatusTextBlock.Text = $"コード生成中";
             using (var client = new HttpClient())
             {
                 string fileContent = null;
@@ -267,59 +270,61 @@ namespace CodeGenerator
         }
 
         private void SaveGeneratedContent(string generatedContent, string outputFolder)
-{
-    var codeBlocks = Regex.Matches(generatedContent, @"```([\w\+\#\.]+)?(?:\:([^\r\n]+))?\r?\n([\s\S]*?)\r?\n```");
-
-    if (codeBlocks.Count > 0)
-    {
-        foreach (Match codeBlock in codeBlocks)
         {
-            string language = codeBlock.Groups[1].Value?.ToLower();
-            string filenameWithPath = codeBlock.Groups[2].Value;
-            string code = codeBlock.Groups[3].Value.Trim();
+            var codeBlocks = Regex.Matches(generatedContent, @"```([\w\+\#\.]+)?(?:\:([^\r\n]+))?\r?\n([\s\S]*?)\r?\n```");
 
-            if (string.IsNullOrEmpty(filenameWithPath))
+            if (codeBlocks.Count > 0)
             {
-                // ファイル名が指定されていない場合はデフォルトの名前を設定
-                filenameWithPath = DetermineFilename(language, code);
+                foreach (Match codeBlock in codeBlocks)
+                {
+                    string language = codeBlock.Groups[1].Value?.ToLower();
+                    string filenameWithPath = codeBlock.Groups[2].Value;
+                    string code = codeBlock.Groups[3].Value.Trim();
+
+                    if (string.IsNullOrEmpty(filenameWithPath))
+                    {
+                        // ファイル名が指定されていない場合はデフォルトの名前を設定
+                        filenameWithPath = DetermineFilename(language, code);
+                    }
+
+                    // ファイルパスを結合して正規化
+                    string filePath = Path.GetFullPath(Path.Combine(outputFolder, filenameWithPath));
+
+                    // セキュリティ対策：filePath が outputFolder のサブディレクトリか確認
+                    if (!filePath.StartsWith(Path.GetFullPath(outputFolder), StringComparison.OrdinalIgnoreCase))
+                    {
+                        throw new UnauthorizedAccessException("無効なファイルパスが検出されました。");
+                    }
+
+                    // ディレクトリが存在しない場合は作成
+                    string directoryPath = Path.GetDirectoryName(filePath);
+                    if (!Directory.Exists(directoryPath))
+                    {
+                        Directory.CreateDirectory(directoryPath);
+                    }
+
+                    // ファイルに書き込み
+                    File.WriteAllText(filePath, code);
+                    StatusTextBlock.Text = $"ファイルが {filePath} に保存されました。";
+                }
+            }
+            else
+            {
+                // コードブロックがない場合、全体をマークダウンファイルとして保存
+                string filePath = Path.Combine(outputFolder, "generated_content.md");
+                File.WriteAllText(filePath, generatedContent);
+                StatusTextBlock.Text = $"ファイルが {filePath} に保存されました。";
             }
 
-            // ファイルパスを結合して正規化
-            string filePath = Path.GetFullPath(Path.Combine(outputFolder, filenameWithPath));
-
-            // セキュリティ対策：filePath が outputFolder のサブディレクトリか確認
-            if (!filePath.StartsWith(Path.GetFullPath(outputFolder), StringComparison.OrdinalIgnoreCase))
-            {
-                throw new UnauthorizedAccessException("無効なファイルパスが検出されました。");
-            }
-
-            // ディレクトリが存在しない場合は作成
-            string directoryPath = Path.GetDirectoryName(filePath);
-            if (!Directory.Exists(directoryPath))
-            {
-                Directory.CreateDirectory(directoryPath);
-            }
-
-            // ファイルに書き込み
-            File.WriteAllText(filePath, code);
         }
-    }
-    else
-    {
-        // コードブロックがない場合、全体をマークダウンファイルとして保存
-        string filePath = Path.Combine(outputFolder, "generated_content.md");
-        File.WriteAllText(filePath, generatedContent);
-    }
-
-    MessageBox.Show($"ファイルが {outputFolder} に保存されました。");
-}
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
             var selectedItem = FolderTreeView.SelectedItem as FolderTreeItem;
             if (selectedItem == null)
             {
-                MessageBox.Show("保存先フォルダを選択してください。");
+                StatusTextBlock.Text = "保存先フォルダを選択してください。";
+
                 return;
             }
 
@@ -328,7 +333,7 @@ namespace CodeGenerator
 
             if (string.IsNullOrWhiteSpace(generatedContent))
             {
-                MessageBox.Show("保存するコンテンツがありません。");
+                StatusTextBlock.Text = "保存するコンテンツがありません。";
                 return;
             }
 
@@ -338,7 +343,7 @@ namespace CodeGenerator
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"保存中にエラーが発生しました: {ex.Message}");
+                StatusTextBlock.Text = $"保存中にエラーが発生しました: {ex.Message}";
             }
         }
 
