@@ -33,24 +33,16 @@
                 <Grid Grid.Row="0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
                     <Label Content="Root" Grid.Column="0" HorizontalAlignment="Left"/>
-                    <Button Content="📂" Click="SelectRootFolder_Click" Grid.Column="1" HorizontalAlignment="Right"/>
-                    <TextBox x:Name="Root" Grid.Column="2" Text="{Binding RootFolder, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
+                    <TextBox x:Name="Root" Grid.Column="1" Text="{Binding RootFolder, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
+                    <Button Content="📂" Click="SelectRootFolder_Click" Grid.Column="2" HorizontalAlignment="Right"/>
                     <Button Content="🔁" Click="Button_Click" Grid.Column="3" HorizontalAlignment="Right"/>
                 </Grid>
-                <!--<StackPanel Orientation="Horizontal" Grid.Row="0">
-                    <Label Content="フォルダ:" HorizontalAlignment="Left"></Label>
-                    <Button Content="📁" Click="SelectRootFolder_Click" HorizontalAlignment="Right"/>
-                    <TextBox x:Name="Root" Text="{Binding RootFolder, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"></TextBox>
-
-                    <Button Content="🔁" Click="Button_Click" HorizontalAlignment="Right"></Button>
-
-                </StackPanel>-->
                 <TreeView x:Name="FolderTreeView" Grid.Row="1">
                     <TreeView.Resources>
                         <Style TargetType="{x:Type local:FolderTreeItem}">
@@ -76,17 +68,23 @@
             <!-- 中央: プロンプト -->
             <Grid Grid.Column="2" Margin="5,0,5,0">
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/> <!-- ファイルパス表示とフォルダ選択ボタン -->
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
+                <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,5">
+                    <Label Content="Input: "></Label>
+                    <TextBox x:Name="FilePathTextBox" Width="300" IsReadOnly="True" Margin="0,0,5,0"/>
+                    <Button Content="📂" Click="SelectFolderButton_Click"/>
+                </StackPanel>
 
-                <TextBlock Text="言語選択:" Grid.Row="0" Margin="0,0,0,5"/>
-                <ComboBox x:Name="LanguageComboBox" Grid.Row="1" Margin="0,0,0,10"/>
-                <wv2:WebView2 x:Name="PromptTextArea" Grid.Row="2" Margin="-8"/>
+                <TextBlock Text="言語選択:" Grid.Row="1" Margin="0,0,0,5"/>
+                <ComboBox x:Name="LanguageComboBox" Grid.Row="2" Margin="0,0,0,10"/>
+                <wv2:WebView2 x:Name="PromptTextArea" Grid.Row="3" Margin="-8"/>
                 <!--<TextBox x:Name="PromptTextArea"  TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"/>-->
-                <Button Content="コード生成" Grid.Row="3" Margin="0,10,0,0" Height="30" Click="GenerateButton_Click"/>
+                <Button Content="コード生成" Grid.Row="4" Margin="0,10,0,0" Height="30" Click="GenerateButton_Click"/>
             </Grid>
 
             <!-- GridSplitter -->

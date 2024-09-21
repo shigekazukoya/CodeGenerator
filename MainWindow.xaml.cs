@@ -186,7 +186,7 @@ namespace CodeGenerator
 
             try
             {
-                string generatedContent = await GenerateCodeWithGemini(prompt, selectedLanguage);
+                string generatedContent = await GenerateCodeWithGemini(prompt, selectedLanguage, FilePathTextBox.Text);
                 ResultTextBox.Text = generatedContent;
             }
             catch (Exception ex)
@@ -210,22 +210,42 @@ namespace CodeGenerator
             return JsonConvert.DeserializeObject<string>(resut);
         }
 
-        private async Task<string> GenerateCodeWithGemini(string prompt, string language)
+        private async Task<string> GenerateCodeWithGemini(string prompt, string language, string filePath = null)
         {
             using (var client = new HttpClient())
             {
+                string fileContent = null;
+                if (!string.IsNullOrEmpty(filePath))
+                {
+                    if (File.Exists(filePath))
+                    {
+                        fileContent = File.ReadAllText(filePath);
+                    }
+                }
+
+                string newPrompt;
+
+                if (!string.IsNullOrEmpty(fileContent))
+                {
+                    newPrompt = $"Based on the following {language} file content, generate the output. For each code block, include the filename in the code block as shown below:\n\n```langualge:filename.extension\ncode\n```\n\nFile content:\n{fileContent}\n\nAdditional prompt:\n{prompt}";
+                }
+                else
+                {
+                    newPrompt = $"Generate {language} code for the following prompt. For each code block, include the filename in the code block as shown below:\n\n```langualge:filename.extension\ncode\n```\n\nPrompt:\n{prompt}";
+                }
+
                 var request = new
                 {
                     contents = new[]
                     {
-                        new
-                        {
-                            parts = new[]
-                            {
-                                new { text = $"Generate {language} code for the following prompt: {prompt}" }
-                            }
-                        }
+                new
+                {
+                    parts = new[]
+                    {
+                        new { text = newPrompt }
                     }
+                }
+            }
                 };
 
                 var json = JsonConvert.SerializeObject(request);
@@ -245,6 +265,54 @@ namespace CodeGenerator
                 return responseObject["candidates"][0]["content"]["parts"][0]["text"].ToString();
             }
         }
+
+        private void SaveGeneratedContent(string generatedContent, string outputFolder)
+{
+    var codeBlocks = Regex.Matches(generatedContent, @"```([\w\+\#\.]+)?(?:\:([^\r\n]+))?\r?\n([\s\S]*?)\r?\n```");
+
+    if (codeBlocks.Count > 0)
+    {
+        foreach (Match codeBlock in codeBlocks)
+        {
+            string language = codeBlock.Groups[1].Value?.ToLower();
+            string filenameWithPath = codeBlock.Groups[2].Value;
+            string code = codeBlock.Groups[3].Value.Trim();
+
+            if (string.IsNullOrEmpty(filenameWithPath))
+            {
+                // ファイル名が指定されていない場合はデフォルトの名前を設定
+                filenameWithPath = DetermineFilename(language, code);
+            }
+
+            // ファイルパスを結合して正規化
+            string filePath = Path.GetFullPath(Path.Combine(outputFolder, filenameWithPath));
+
+            // セキュリティ対策：filePath が outputFolder のサブディレクトリか確認
+            if (!filePath.StartsWith(Path.GetFullPath(outputFolder), StringComparison.OrdinalIgnoreCase))
+            {
+                throw new UnauthorizedAccessException("無効なファイルパスが検出されました。");
+            }
+
+            // ディレクトリが存在しない場合は作成
+            string directoryPath = Path.GetDirectoryName(filePath);
+            if (!Directory.Exists(directoryPath))
+            {
+                Directory.CreateDirectory(directoryPath);
+            }
+
+            // ファイルに書き込み
+            File.WriteAllText(filePath, code);
+        }
+    }
+    else
+    {
+        // コードブロックがない場合、全体をマークダウンファイルとして保存
+        string filePath = Path.Combine(outputFolder, "generated_content.md");
+        File.WriteAllText(filePath, generatedContent);
+    }
+
+    MessageBox.Show($"ファイルが {outputFolder} に保存されました。");
+}
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
@@ -272,33 +340,6 @@ namespace CodeGenerator
             {
                 MessageBox.Show($"保存中にエラーが発生しました: {ex.Message}");
             }
-        }
-
-        private void SaveGeneratedContent(string generatedContent, string outputFolder)
-        {
-            var codeBlocks = Regex.Matches(generatedContent, @"```(\w+)\r?\n([\s\S]*?)\r?\n```");
-
-            if (codeBlocks.Count > 0)
-            {
-                foreach (Match codeBlock in codeBlocks)
-                {
-                    string language = codeBlock.Groups[1].Value.ToLower();
-                    string code = codeBlock.Groups[2].Value.Trim();
-
-                    string filename = DetermineFilename(language, code);
-                    string filePath = System.IO.Path.Combine(outputFolder, filename);
-
-                    File.WriteAllText(filePath, code);
-                }
-            }
-            else
-            {
-                // コードブロックがない場合、全体をマークダウンファイルとして保存
-                string filePath = System.IO.Path.Combine(outputFolder, "generated_content.md");
-                File.WriteAllText(filePath, generatedContent);
-            }
-
-            MessageBox.Show($"ファイルが {outputFolder} に保存されました。");
         }
 
         private string DetermineFilename(string language, string code)
@@ -396,6 +437,19 @@ namespace CodeGenerator
         private void Button_Click(object sender, RoutedEventArgs e)
         {
             UpdateFolderTreeView();
+        }
+
+        private void SelectFolderButton_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog();
+
+            // ダイアログを表示し、結果を確認
+            if (openFileDialog.ShowDialog() == true)
+            {
+                // 選択されたファイルのパスを取得
+                string filePath = openFileDialog.FileName;
+                FilePathTextBox.Text = filePath;
+            }
         }
     }
     public class FolderTreeItem : TreeViewItem
