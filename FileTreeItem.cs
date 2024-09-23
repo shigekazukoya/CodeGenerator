@@ -27,6 +27,10 @@ namespace CodeGenerator
             menuItem2.Click += (s, e) => OpenInVsCode();
             contextMenu.Items.Add(menuItem2);
 
+            var menuItem3 = new MenuItem { Header = "Inputに追加" };
+            menuItem3.Click += (s, e) => { Commands.AddFileCommand.Execute(info.FullName); } ;
+            contextMenu.Items.Add(menuItem3);
+
             this.ContextMenu = contextMenu;
         }
 

@@ -4,12 +4,14 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Globalization;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace CodeGenerator
 {
@@ -21,11 +23,11 @@ namespace CodeGenerator
         private ApiService apiService;
         private CodeFileSaver codeFileSaver;
         private int versionCounter = 0;
-
         public event PropertyChangedEventHandler? PropertyChanged;
 
         public ObservableCollection<CodeVersion> CodeVersions { get; private set; } = new ObservableCollection<CodeVersion>();
 
+        public ObservableCollection<string> InputFiles { get; } = new ObservableCollection<string>();
         public MainWindow()
         {
             InitializeComponent();
@@ -36,6 +38,31 @@ namespace CodeGenerator
             RootFolder = "C:\\";
             this.DataContext = this;
             UpdateFolderTreeView();
+            var commandBindings = new CommandBinding();
+            commandBindings.Command = Commands.AddFileCommand;
+            commandBindings.Executed += CommandBindings_Executed;
+
+            CommandBindings.Add(commandBindings);
+        }
+
+        private void CommandBindings_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (e.Parameter is not string filePath)
+            {
+                return;
+            }
+
+            if (string.IsNullOrEmpty(filePath))
+            {
+                return;
+            }
+
+            if (InputFiles.Any(x => x.Equals(filePath, StringComparison.InvariantCultureIgnoreCase)))
+            {
+                return;
+            }
+
+            InputFiles.Add(filePath);
         }
 
         private void LoadApiKey()
@@ -136,6 +163,9 @@ namespace CodeGenerator
 
         private async void GenerateButton_Click(object sender, RoutedEventArgs e)
         {
+            StatusTextBlock.Text = $"コード生成開始";
+            Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
+
             string prompt = await PromptTextArea.GetTextAsync();
             string selectedLanguage = LanguageComboBox.SelectedItem as string;
 
@@ -147,16 +177,19 @@ namespace CodeGenerator
 
             try
             {
-                string fileContent = null;
-                if (!string.IsNullOrEmpty(FilePathTextBox.Text))
+                var fileContent = new StringBuilder();
+                foreach(var file in InputFiles)
                 {
-                    if (File.Exists(FilePathTextBox.Text))
+                    if (File.Exists(file))
                     {
-                        fileContent = File.ReadAllText(FilePathTextBox.Text);
+                        var fileName  = Path.GetFileName(file);
+                        var contents = File.ReadAllText(file);
+                        fileContent.AppendLine(fileName);
+                        fileContent.AppendLine(contents);
                     }
                 }
 
-                string generatedContent = await apiService.GenerateCodeWithGemini(prompt, selectedLanguage, fileContent);
+                string generatedContent = await apiService.GenerateCodeWithGemini(prompt, selectedLanguage, fileContent.ToString());
                 // バージョンを追加
                 var newVersion = new CodeVersion
                 {
@@ -172,6 +205,9 @@ namespace CodeGenerator
             catch (Exception ex)
             {
                 StatusTextBlock.Text = $"エラーが発生しました: {ex.Message}";
+            }
+            finally {
+                Mouse.OverrideCursor = null;
             }
         }
 
@@ -209,16 +245,6 @@ namespace CodeGenerator
             UpdateFolderTreeView();
         }
 
-        private void SelectFolderButton_Click(object sender, RoutedEventArgs e)
-        {
-            var openFileDialog = new Microsoft.Win32.OpenFileDialog();
-
-            if (openFileDialog.ShowDialog() == true)
-            {
-                string filePath = openFileDialog.FileName;
-                FilePathTextBox.Text = filePath;
-            }
-        }
         private void SetSyntaxHighlighting(string language)
         {
             //ResultTextEditor.SyntaxHighlighting = HighlightingManager.Instance.GetDefinition("Markdown");
@@ -276,6 +302,15 @@ namespace CodeGenerator
             CodeVersions.Clear();
             versionCounter = 0;
             await this.ResultTextEditor.SetTextAsync(string.Empty);
+        }
+
+        private void MenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            var deleteItems = InputListBox.SelectedItems.OfType<string>().ToArray();
+            foreach (var filePath in deleteItems)
+            {
+                InputFiles.Remove(filePath);
+            }
         }
     }
 
