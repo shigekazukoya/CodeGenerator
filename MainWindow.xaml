@@ -1,7 +1,7 @@
 ﻿<Window x:Class="CodeGenerator.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:local="clr-namespace:CodeGenerator" xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf" xmlns:avalonEdit="http://icsharpcode.net/sharpdevelop/avalonedit"
+        xmlns:local="clr-namespace:CodeGenerator" xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf" xmlns:avalonEdit="http://icsharpcode.net/sharpdevelop/avalonedit" xmlns:editor="clr-namespace:CodeGenerator.Editor"
         Title="Gemini Code Generator" Height="600" Width="1200">
     <Grid>
         <Grid.RowDefinitions>
@@ -82,8 +82,7 @@
 
                 <TextBlock Text="言語選択:" Grid.Row="1" Margin="0,0,0,5"/>
                 <ComboBox x:Name="LanguageComboBox" Grid.Row="2" Margin="0,0,0,10"/>
-                <wv2:WebView2 x:Name="PromptTextArea" Grid.Row="3" Margin="-8"/>
-                <!--<TextBox x:Name="PromptTextArea"  TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"/>-->
+                <editor:MonacoEditor x:Name="PromptTextArea" Grid.Row="3"></editor:MonacoEditor>
                 <Button Content="コード生成" Grid.Row="4" Margin="0,10,0,0" Height="30" Click="GenerateButton_Click"/>
             </Grid>
 
@@ -108,10 +107,11 @@
                               DisplayMemberPath="VersionName"/>
                     <Button Content="差分確認" Margin="10,0,0,0" Click="DiffButton_Click"/>
                 </StackPanel>
-                <avalonEdit:TextEditor x:Name="ResultTextEditor" Grid.Row="2" 
+                <editor:MonacoEditor x:Name="ResultTextEditor" Grid.Row="2"/>
+                <!--<avalonEdit:TextEditor x:Name="ResultTextEditor" Grid.Row="2" 
                                    SyntaxHighlighting="Markdown" 
                                    VerticalScrollBarVisibility="Auto"
-                                   HorizontalScrollBarVisibility="Auto"/>
+                                   HorizontalScrollBarVisibility="Auto"/>-->
                 <Button Content="ファイルとして保存" Grid.Row="3" Margin="0,10,0,0" Height="30" Click="SaveButton_Click"/>
             </Grid>
         </Grid>

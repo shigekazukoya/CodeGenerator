@@ -31,20 +31,6 @@ namespace CodeGenerator
             RootFolder = "C:\\";
             this.DataContext = this;
             UpdateFolderTreeView();
-            InitializeAsync();
-        }
-
-        async void InitializeAsync()
-        {
-            await PromptTextArea.EnsureCoreWebView2Async(null);
-            var exePath = AppDomain.CurrentDomain.BaseDirectory;
-            var htmlPath = Path.Combine(exePath, "Editor\\monaco\\dist\\index.html");
-
-            PromptTextArea.CoreWebView2.SetVirtualHostNameToFolderMapping(
-                "appassets",
-                new FileInfo(htmlPath).DirectoryName,
-                Microsoft.Web.WebView2.Core.CoreWebView2HostResourceAccessKind.Allow);
-            PromptTextArea.CoreWebView2.Navigate("http://appassets/index.html");
         }
 
         private void LoadApiKey()
@@ -144,7 +130,7 @@ namespace CodeGenerator
 
         private async void GenerateButton_Click(object sender, RoutedEventArgs e)
         {
-            string prompt = await GetTextAsync();
+            string prompt = await PromptTextArea.GetTextAsync();
             string selectedLanguage = LanguageComboBox.SelectedItem as string;
 
             if (string.IsNullOrWhiteSpace(prompt))
@@ -174,7 +160,7 @@ namespace CodeGenerator
                 CodeVersions.Add(newVersion);
                 VersionComboBox.SelectedItem = newVersion;
 
-               ResultTextEditor.Text = generatedContent;
+               await ResultTextEditor.SetTextAsync(generatedContent);
                 StatusTextBlock.Text = $"コード生成完了";
             }
             catch (Exception ex)
@@ -183,13 +169,7 @@ namespace CodeGenerator
             }
         }
 
-        public async Task<string> GetTextAsync()
-        {
-            var result = await PromptTextArea.CoreWebView2.ExecuteScriptAsync("window.getText()");
-            return JsonConvert.DeserializeObject<string>(result);
-        }
-
-        private void SaveButton_Click(object sender, RoutedEventArgs e)
+        private async void SaveButton_Click(object sender, RoutedEventArgs e)
         {
             var selectedItem = FolderTreeView.SelectedItem as FolderTreeItem;
             if (selectedItem == null)
@@ -199,7 +179,7 @@ namespace CodeGenerator
             }
 
             string outputFolder = selectedItem.Info.FullName;
-            string generatedContent = ResultTextEditor.Text;
+            string generatedContent = await ResultTextEditor.GetTextAsync();
 
             if (string.IsNullOrWhiteSpace(generatedContent))
             {
