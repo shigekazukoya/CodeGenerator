@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Security;
 using System.Text;
@@ -11,6 +12,7 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
 using System.Windows.Shapes;
 
 namespace CodeGenerator
@@ -36,6 +38,19 @@ namespace CodeGenerator
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
             DialogResult = false;
+        }
+        private void Hyperlink_RequestNavigate(object sender, RequestNavigateEventArgs e)
+        {
+            try
+            {
+                // デフォルトのブラウザでリンクを開く
+                Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
+            }
+            catch (System.Exception ex)
+            {
+                System.Windows.MessageBox.Show($"リンクを開く際にエラーが発生しました: {ex.Message}");
+            }
+            e.Handled = true;
         }
     }
 }
