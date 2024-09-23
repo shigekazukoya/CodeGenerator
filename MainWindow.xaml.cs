@@ -213,16 +213,14 @@ namespace CodeGenerator
 
         private async void SaveButton_Click(object sender, RoutedEventArgs e)
         {
-            var selectedItem = FolderTreeView.SelectedItem as FolderTreeItem;
-            if (selectedItem == null)
+            var outputFolder = SaveFolderTextBlock.Text;
+            if (string.IsNullOrEmpty(outputFolder))
             {
                 StatusTextBlock.Text = "保存先フォルダを選択してください。";
                 return;
             }
 
-            string outputFolder = selectedItem.Info.FullName;
             string generatedContent = await ResultTextEditor.GetTextAsync();
-
             if (string.IsNullOrWhiteSpace(generatedContent))
             {
                 StatusTextBlock.Text = "保存するコンテンツがありません。";
@@ -310,6 +308,20 @@ namespace CodeGenerator
             foreach (var filePath in deleteItems)
             {
                 InputFiles.Remove(filePath);
+            }
+        }
+
+        private void FolderTreeView_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+            if(this.FolderTreeView.SelectedItem is FolderTreeItem folderTreeItem)
+            {
+                SaveFolderTextBlock.Text = folderTreeItem.Info.FullName;
+            }
+
+            if(this.FolderTreeView.SelectedItem is FileTreeItem fileTreeItem)
+            {
+                var directory  = Path.GetDirectoryName(fileTreeItem.Info.FullName);
+                SaveFolderTextBlock.Text = directory;
             }
         }
     }
