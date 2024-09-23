@@ -8,6 +8,8 @@
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
     <SatelliteResourceLanguages>_</SatelliteResourceLanguages>
+    <ApplicationIcon>Resources\code.ico</ApplicationIcon>
+
   </PropertyGroup>
 
   <ItemGroup>
