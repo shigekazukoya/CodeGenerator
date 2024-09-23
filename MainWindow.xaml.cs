@@ -2,6 +2,7 @@
 using Microsoft.Win32;
 using Newtonsoft.Json;
 using System;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Security.Cryptography;
@@ -23,7 +24,7 @@ namespace CodeGenerator
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
-        public List<CodeVersion> CodeVersions { get; } = new List<CodeVersion>();
+        public ObservableCollection<CodeVersion> CodeVersions { get; private set; } = new ObservableCollection<CodeVersion>();
 
         public MainWindow()
         {
@@ -244,7 +245,7 @@ namespace CodeGenerator
         {
             if (VersionComboBox.SelectedItem is string selectedVersion)
             {
-                var version = CodeVersions.Find(v => v.VersionName == selectedVersion);
+                var version = CodeVersions.FirstOrDefault(v => v.VersionName == selectedVersion);
                 if (version != null)
                 {
                     //ResultTextEditor.Text = version.Content;
@@ -268,6 +269,13 @@ namespace CodeGenerator
         protected virtual void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        private async void Button_Click_1(object sender, RoutedEventArgs e)
+        {
+            CodeVersions.Clear();
+            versionCounter = 0;
+            await this.ResultTextEditor.SetTextAsync(string.Empty);
         }
     }
 

@@ -107,6 +107,7 @@
                               ItemsSource="{Binding CodeVersions}" 
                               DisplayMemberPath="VersionName"/>
                     <Button Content="差分確認" Margin="10,0,0,0" Click="DiffButton_Click"/>
+                    <Button Content="Clear" Click="Button_Click_1" Margin="10,0,0,0"/>
                 </StackPanel>
                 <editor:MonacoEditor x:Name="ResultTextEditor" Grid.Row="2"/>
                 <!--<avalonEdit:TextEditor x:Name="ResultTextEditor" Grid.Row="2" 
