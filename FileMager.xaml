@@ -1,0 +1,45 @@
+﻿<Window x:Class="CodeGenerator.FileMager"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:CodeGenerator" 
+        xmlns:diffplex="clr-namespace:DiffPlex.Wpf.Controls;assembly=DiffPlex.Wpf" xmlns:avalonEdit="http://icsharpcode.net/sharpdevelop/avalonedit"
+        mc:Ignorable="d"
+        Title="FileMager" Height="450" Width="800">
+    <Window.Resources>
+        <local:ChangeTypeToBrushConverter x:Key="ChangeTypeToBrushConverter"/>
+    </Window.Resources>
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>    <!-- 差分表示 -->
+            <RowDefinition Height="*"/>    <!-- 差分表示 -->
+            <RowDefinition Height="*"/> <!-- マージ後表示 -->
+            <RowDefinition Height="Auto"/> <!-- ボタン -->
+        </Grid.RowDefinitions>
+        
+        <StackPanel Grid.Row="0" Orientation="Vertical" Margin="0,0,0,10">
+            <TextBlock x:Name="FilePath"></TextBlock>
+        </StackPanel>
+        <diffplex:DiffViewer x:Name="DiffView" Grid.Row="1" />
+
+        <!-- 差分表示セクション -->
+        
+        <!-- マージ後のテキスト表示セクション -->
+        <StackPanel Grid.Row="2">
+            <Label Content="保存するテキスト"></Label>
+        <avalonEdit:TextEditor x:Name="ResultTextEditor" 
+                               ShowLineNumbers="True"
+                                   VerticalScrollBarVisibility="Auto"
+                                   HorizontalScrollBarVisibility="Auto"/>
+            
+        </StackPanel>
+
+
+        <!-- ボタンセクション -->
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="保存" Width="100" Click="SaveButton_Click" Margin="0,0,5,0"/>
+            <Button Content="キャンセル" Width="100" Click="CancelButton_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

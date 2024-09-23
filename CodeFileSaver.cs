@@ -1,6 +1,10 @@
-﻿using System;
+﻿using DiffPlex.DiffBuilder.Model;
+using DiffPlex.DiffBuilder;
+using DiffPlex;
+using System;
 using System.IO;
 using System.Text.RegularExpressions;
+using System.Windows;
 
 namespace CodeGenerator
 {
@@ -36,13 +40,52 @@ namespace CodeGenerator
                         Directory.CreateDirectory(directoryPath);
                     }
 
-                    File.WriteAllText(filePath, code);
+                    SaveFile(filePath, code);
                 }
             }
             else
             {
                 string filePath = Path.Combine(outputFolder, "generated_content.md");
-                File.WriteAllText(filePath, generatedContent);
+                SaveFile(filePath, generatedContent);
+            }
+        }
+
+        private void SaveFile(string filePath, string newContent)
+        {
+            if (File.Exists(filePath))
+            {
+                string existingContent = File.ReadAllText(filePath);
+
+                var diffBuilder = new InlineDiffBuilder(new Differ());
+                var diffResult = diffBuilder.BuildDiffModel(existingContent, newContent);
+
+                // Check if there are differences
+                if (diffResult.Lines.Any(line => line.Type != ChangeType.Unchanged))
+                {
+                    // Show diff and ask for merge
+                    var diffWindow = new FileMager(existingContent, newContent, filePath);
+                    bool? result = diffWindow.ShowDialog();
+
+                    if (result == true)
+                    {
+                        // User merged changes
+                        string mergedContent = diffWindow.MergedText;
+                        File.WriteAllText(filePath, mergedContent);
+                    }
+                    else
+                    {
+                        // User canceled
+                    }
+                }
+                else
+                {
+                    // No differences, overwrite
+                    File.WriteAllText(filePath, newContent);
+                }
+            }
+            else
+            {
+                File.WriteAllText(filePath, newContent);
             }
         }
     }

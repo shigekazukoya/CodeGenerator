@@ -174,8 +174,7 @@ namespace CodeGenerator
                 CodeVersions.Add(newVersion);
                 VersionComboBox.SelectedItem = newVersion;
 
-               //ResultTextEditor.Text = generatedContent;
-               ResultTextBox.Text = generatedContent;
+               ResultTextEditor.Text = generatedContent;
                 StatusTextBlock.Text = $"コード生成完了";
             }
             catch (Exception ex)
@@ -200,8 +199,7 @@ namespace CodeGenerator
             }
 
             string outputFolder = selectedItem.Info.FullName;
-            //string generatedContent = ResultTextEditor.Text;
-            string generatedContent = ResultTextBox.Text;
+            string generatedContent = ResultTextEditor.Text;
 
             if (string.IsNullOrWhiteSpace(generatedContent))
             {

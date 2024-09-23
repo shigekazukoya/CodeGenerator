@@ -1,7 +1,7 @@
 ﻿<Window x:Class="CodeGenerator.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:local="clr-namespace:CodeGenerator" xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf" 
+        xmlns:local="clr-namespace:CodeGenerator" xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf" xmlns:avalonEdit="http://icsharpcode.net/sharpdevelop/avalonedit"
         Title="Gemini Code Generator" Height="600" Width="1200">
     <Grid>
         <Grid.RowDefinitions>
@@ -108,13 +108,10 @@
                               DisplayMemberPath="VersionName"/>
                     <Button Content="差分確認" Margin="10,0,0,0" Click="DiffButton_Click"/>
                 </StackPanel>
-                <TextBox x:Name="ResultTextBox" Grid.Row="2" TextWrapping="Wrap" AcceptsReturn="True" IsReadOnly="True" VerticalScrollBarVisibility="Auto"/>
-
-                <!--<avalonEdit:TextEditor x:Name="ResultTextEditor" Grid.Row="2" 
-                                   SyntaxHighlighting="C#" 
-                                   IsReadOnly="True" 
+                <avalonEdit:TextEditor x:Name="ResultTextEditor" Grid.Row="2" 
+                                   SyntaxHighlighting="Markdown" 
                                    VerticalScrollBarVisibility="Auto"
-                                   HorizontalScrollBarVisibility="Auto"/>-->
+                                   HorizontalScrollBarVisibility="Auto"/>
                 <Button Content="ファイルとして保存" Grid.Row="3" Margin="0,10,0,0" Height="30" Click="SaveButton_Click"/>
             </Grid>
         </Grid>
