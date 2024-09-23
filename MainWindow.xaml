@@ -46,13 +46,13 @@
                     <Button Content="🔁" Click="Button_Click" Grid.Column="3" HorizontalAlignment="Right"/>
                 </Grid>
                 <Grid Grid.Row="1">
-                    <Grid.ColumnDefinitions>
+                    <!--<Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <Label Content="フィルター" Grid.Column="0" VerticalAlignment="Center"/>
                     <TextBox Grid.Column="1" Text="{Binding FilterText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-                             HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
+                             HorizontalAlignment="Stretch" VerticalAlignment="Center"/>-->
                 </Grid>
                 <TreeView x:Name="FolderTreeView" Grid.Row="2" >
                     <TreeView.Resources>
