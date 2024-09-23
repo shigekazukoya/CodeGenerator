@@ -1,66 +1,85 @@
-﻿using Newtonsoft.Json;
+﻿using Microsoft.SemanticKernel;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.SemanticKernel.ChatCompletion;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace CodeGenerator
 {
     public class ApiService
     {
         private const string API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
-        private string ApiKey;
+        private string geminiModelId = "gemini-1.5-flash";
+        private Kernel kernel;
+        private IChatCompletionService chatCompletionService;
+        public string SystemMessage = """
+    For each code block, include the filename in the code block as shown below:
+
+    ```language:filename.extension
+    code
+    ```
+    """;
+
 
         public ApiService(string apiKey)
         {
-            ApiKey = apiKey;
+#pragma warning disable SKEXP0070
+            this.kernel = Kernel.CreateBuilder()
+                .AddGoogleAIGeminiChatCompletion(
+                    modelId: geminiModelId,
+                    apiKey: apiKey)
+                .Build();
+#pragma warning restore SKEXP0070
+
+            chatCompletionService = kernel.GetRequiredService<IChatCompletionService>();
         }
 
         public async Task<string> GenerateCodeWithGemini(string prompt, string language, string fileContent = null)
         {
-            using (var client = new HttpClient())
+            string newPrompt;
+
+            if (!string.IsNullOrEmpty(fileContent))
             {
-                string newPrompt;
 
-                if (!string.IsNullOrEmpty(fileContent))
-                {
-                    newPrompt = $"Based on the following {language} file content, generate the output. For each code block, include the filename in the code block as shown below:\n\n```langualge:filename.extension\ncode\n```\n\nFile content:\n{fileContent}\n\nAdditional prompt:\n{prompt}";
-                }
-                else
-                {
-                    newPrompt = $"Generate {language} code for the following prompt. For each code block, include the filename in the code block as shown below:\n\n```langualge:filename.extension\ncode\n```\n\nPrompt:\n{prompt}";
-                }
+                newPrompt = $"""
+    Based on the following {language} file content, generate the output.
 
-                var request = new
-                {
-                    contents = new[]
-                    {
-                        new
-                        {
-                            parts = new[]
-                            {
-                                new { text = newPrompt }
-                            }
-                        }
-                    }
-                };
+    File content:
+    {fileContent}
 
-                var json = JsonConvert.SerializeObject(request);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
+    Additional prompt:
+    {prompt}
+    """;
+            }
+            else
+            {
+                newPrompt = $"""
+Generate {language} code for the following prompt:
 
-                client.DefaultRequestHeaders.Add("x-goog-api-key", ApiKey);
+{prompt}
+""";
+            }
 
-                var response = await client.PostAsync($"{API_URL}", content);
-                var responseString = await response.Content.ReadAsStringAsync();
+            var chatHistory = new ChatHistory(SystemMessage);
+            chatHistory.AddUserMessage(newPrompt);
 
-                if (!response.IsSuccessStatusCode)
-                {
-                    throw new Exception($"API request failed: {responseString}");
-                }
-
-                var responseObject = JObject.Parse(responseString);
-                return responseObject["candidates"][0]["content"]["parts"][0]["text"].ToString();
+            OpenAIPromptExecutionSettings settings = new()
+            {
+                MaxTokens = 100,
+            };
+            var reply = await chatCompletionService.GetChatMessageContentAsync(chatHistory, settings);
+            chatHistory.Add(reply);
+            if (string.IsNullOrEmpty(reply.Content))
+            {
+                return string.Empty;
+            }
+            else
+            {
+                return reply.Content;
             }
         }
     }
