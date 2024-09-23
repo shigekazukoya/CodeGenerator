@@ -37,6 +37,11 @@ namespace CodeGenerator
             Update();
         }
 
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            DiffView.NextDiff();
+        }
+
         public void Update()
         {
             if(this.BeforeCombo.SelectedItem is CodeVersion codeversion)
@@ -51,6 +56,7 @@ namespace CodeGenerator
 
             DiffView.OldText = PreviousContent;
             DiffView.NewText = LatestContent;
+            DiffView.NextDiff();
         }
 
         private void AfterComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)

@@ -6,7 +6,8 @@
         xmlns:local="clr-namespace:CodeGenerator" 
         xmlns:diffplex="clr-namespace:DiffPlex.Wpf.Controls;assembly=DiffPlex.Wpf" xmlns:avalonEdit="http://icsharpcode.net/sharpdevelop/avalonedit"
         mc:Ignorable="d"
-        Title="FileMager" Height="800" Width="800">
+        Title="FileMager" Height="800" Width="800"
+        Loaded="Window_Loaded">
     <Window.Resources>
         <local:ChangeTypeToBrushConverter x:Key="ChangeTypeToBrushConverter"/>
     </Window.Resources>

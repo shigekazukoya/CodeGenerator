@@ -37,5 +37,10 @@ namespace CodeGenerator
         {
             this.Close();
         }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            DiffView.NextDiff();
+        }
     }
 }
