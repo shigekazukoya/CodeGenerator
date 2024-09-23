@@ -12,7 +12,6 @@ namespace CodeGenerator
 {
     public class ApiService
     {
-        private const string API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
         private string geminiModelId = "gemini-1.5-flash";
         private Kernel kernel;
         private IChatCompletionService chatCompletionService;
@@ -23,7 +22,6 @@ namespace CodeGenerator
     code
     ```
     """;
-
 
         public ApiService(string apiKey)
         {

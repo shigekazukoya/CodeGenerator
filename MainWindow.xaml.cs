@@ -1,4 +1,5 @@
-﻿using Microsoft.Win32;
+﻿//using ICSharpCode.AvalonEdit.Highlighting;
+using Microsoft.Win32;
 using Newtonsoft.Json;
 using System;
 using System.IO;
@@ -17,6 +18,8 @@ namespace CodeGenerator
         private string apiKeyFilePath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "apikey.dat");
         private ApiService apiService;
         private CodeFileSaver codeFileSaver;
+        private int versionCounter = 0;
+        public List<CodeVersion> CodeVersions { get; } = new List<CodeVersion>();
 
         public MainWindow()
         {
@@ -162,7 +165,17 @@ namespace CodeGenerator
                 }
 
                 string generatedContent = await apiService.GenerateCodeWithGemini(prompt, selectedLanguage, fileContent);
-                ResultTextBox.Text = generatedContent;
+                // バージョンを追加
+                var newVersion = new CodeVersion
+                {
+                    VersionName = $"v{versionCounter++}",
+                    Content = generatedContent
+                };
+                CodeVersions.Add(newVersion);
+                VersionComboBox.SelectedItem = newVersion;
+
+               //ResultTextEditor.Text = generatedContent;
+               ResultTextBox.Text = generatedContent;
                 StatusTextBlock.Text = $"コード生成完了";
             }
             catch (Exception ex)
@@ -187,6 +200,7 @@ namespace CodeGenerator
             }
 
             string outputFolder = selectedItem.Info.FullName;
+            //string generatedContent = ResultTextEditor.Text;
             string generatedContent = ResultTextBox.Text;
 
             if (string.IsNullOrWhiteSpace(generatedContent))
@@ -213,7 +227,7 @@ namespace CodeGenerator
 
         private void SelectFolderButton_Click(object sender, RoutedEventArgs e)
         {
-            OpenFileDialog openFileDialog = new OpenFileDialog();
+            var openFileDialog = new Microsoft.Win32.OpenFileDialog();
 
             if (openFileDialog.ShowDialog() == true)
             {
@@ -221,5 +235,57 @@ namespace CodeGenerator
                 FilePathTextBox.Text = filePath;
             }
         }
+        private void SetSyntaxHighlighting(string language)
+        {
+            //ResultTextEditor.SyntaxHighlighting = HighlightingManager.Instance.GetDefinition("Markdown");
+            // 言語に応じてシンタックスハイライトを設定
+            // AvalonEditにはデフォルトでいくつかのハイライトが含まれています
+            // 必要に応じてカスタムハイライトを追加できます
+            //switch (language.ToLower())
+            //{
+            //    case "c#":
+            //    case "csharp":
+            //        ResultTextEditor.SyntaxHighlighting = HighlightingManager.Instance.GetDefinition("C#");
+            //        break;
+            //    case "vb":
+            //    case "vb.net":
+            //        ResultTextEditor.SyntaxHighlighting = HighlightingManager.Instance.GetDefinition("VB.NET");
+            //        break;
+            //    // 他の言語に応じて追加
+            //    default:
+            //        break;
+            //}
+        }
+
+        private void VersionComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            if (VersionComboBox.SelectedItem is string selectedVersion)
+            {
+                var version = CodeVersions.Find(v => v.VersionName == selectedVersion);
+                if (version != null)
+                {
+                    //ResultTextEditor.Text = version.Content;
+                    SetSyntaxHighlighting(LanguageComboBox.SelectedItem as string);
+                    StatusTextBlock.Text = $"表示中: {selectedVersion}";
+                }
+            }
+        }
+        private void DiffButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (CodeVersions.Count < 2)
+            {
+                System.Windows.MessageBox.Show("少なくとも2つのバージョンが必要です。", "差分確認", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var diffWindow = new DiffWindow(this);
+            diffWindow.Show();
+        }
+    }
+
+    public class CodeVersion
+    {
+        public string VersionName { get; set; }
+        public string Content { get; set; }
     }
 }

@@ -1,0 +1,25 @@
+﻿<Window x:Class="CodeGenerator.DiffWindow"
+                xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:CodeGenerator" 
+        xmlns:diffplex="clr-namespace:DiffPlex.Wpf.Controls;assembly=DiffPlex.Wpf"
+        Title="差分確認" Height="400" Width="800">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <GroupBox Header="前のバージョン" Grid.Column="0" Margin="5">
+            <ComboBox x:Name="BeforeCombo" DisplayMemberPath="VersionName" ItemsSource="{Binding Before}"  DropDownOpened="ComboBox_DropDownOpened" SelectionChanged="BeforeComboBox_SelectionChanged"></ComboBox>
+        </GroupBox>
+
+        <GroupBox Header="後のバージョン" Grid.Column="1" Margin="5">
+            <ComboBox x:Name="AfterCombo" DisplayMemberPath="VersionName" ItemsSource="{Binding After}" DropDownOpened="ComboBox_DropDownOpened" SelectionChanged="AfterComboBox_SelectionChanged"></ComboBox>
+        </GroupBox>
+        <diffplex:DiffViewer x:Name="DiffView" Grid.Row="1"  Grid.ColumnSpan="2"/>
+    </Grid>
+</Window>

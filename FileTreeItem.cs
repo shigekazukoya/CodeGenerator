@@ -3,6 +3,8 @@ using System.IO;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows;
+using MouseEventArgs = System.Windows.Input.MouseEventArgs;
+using MessageBox = System.Windows.MessageBox;
 
 namespace CodeGenerator
 {
@@ -47,7 +49,7 @@ namespace CodeGenerator
             }
         }
 
-        private void FileTreeItem_MouseEnter(object sender, MouseEventArgs e)
+        private void FileTreeItem_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
         {
             try
             {
@@ -58,13 +60,13 @@ namespace CodeGenerator
                         char[] buffer = new char[5000];
                         int numRead = reader.Read(buffer, 0, buffer.Length);
                         string content = new string(buffer, 0, numRead);
-                        this.ToolTip = new ToolTip { Content = content, MaxWidth = 400, MaxHeight = 300 };
+                        this.ToolTip = new System.Windows.Controls.ToolTip { Content = content, MaxWidth = 400, MaxHeight = 300 };
                     }
                 }
             }
             catch (Exception ex)
             {
-                this.ToolTip = new ToolTip { Content = $"ファイルを読み込めません: {ex.Message}" };
+                this.ToolTip = new System.Windows.Controls.ToolTip { Content = $"ファイルを読み込めません: {ex.Message}" };
             }
         }
 

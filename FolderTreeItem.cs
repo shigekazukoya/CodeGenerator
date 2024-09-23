@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics;
 using System.IO;
 using System.Windows.Controls;
-using System.Windows.Input;
 using System.Windows;
 
 namespace CodeGenerator
@@ -42,7 +41,7 @@ namespace CodeGenerator
             }
             catch (Exception ex)
             {
-                MessageBox.Show("エラーが発生しました: " + ex.Message);
+                System.Windows.MessageBox.Show("エラーが発生しました: " + ex.Message);
             }
         }
 
