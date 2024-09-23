@@ -1,9 +1,11 @@
 import React, { useRef, useEffect } from 'react';
 import Editor, { EditorProps } from "@monaco-editor/react";
+import * as monaco from "monaco-editor";
 
 declare global {
   interface Window {
     setText: (text: string) => void;
+    setLanguage: (language: string) => void;
     getText: () => string;
     chrome?: {
       webview?: {
@@ -31,6 +33,11 @@ const MarkdownEditor: React.FC = () => {
     window.setText = (text: string) => {
       if (editorRef.current) {
         editorRef.current.setValue(text);
+      }
+    };
+    window.setLanguage = (language: string) => {
+      if (editorRef.current) {
+        monaco.editor.setModelLanguage(editorRef.current.getModel(), language);
       }
     };
 

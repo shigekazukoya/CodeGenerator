@@ -49,7 +49,40 @@ namespace CodeGenerator.Editor
 
         public async Task SetTextAsync(string text)
         {
-            await Editor.CoreWebView2.ExecuteScriptAsync($"setText(`{text.Replace("`", "\\`")}`)");
+            if(Editor.CoreWebView2  == null)
+            {
+                // CoreWebView2の初期化が完了していない場合、NavigationCompletedを待つ
+                Editor.NavigationCompleted += async (sender, args) =>
+                {
+                    if (args.IsSuccess)
+                    {
+                        await Editor.CoreWebView2.ExecuteScriptAsync($"setText(`{text.Replace("`", "\\`")}`)");
+                    }
+                };
+            }
+            else
+            {
+                await Editor.CoreWebView2.ExecuteScriptAsync($"setText(`{text.Replace("`", "\\`")}`)");
+            }
+        }
+
+        public async Task SetLanguageAsync(string language)
+        {
+            if(Editor.CoreWebView2  == null)
+            {
+                // CoreWebView2の初期化が完了していない場合、NavigationCompletedを待つ
+                Editor.NavigationCompleted += async (sender, args) =>
+                {
+                    if (args.IsSuccess)
+                    {
+                        await Editor.CoreWebView2.ExecuteScriptAsync($"setLanguage('{language.Replace("'", "\\'")}')");
+                    }
+                };
+            }
+            else
+            {
+                await Editor.CoreWebView2.ExecuteScriptAsync($"setLanguage(`{language.Replace("`", "\\`")}`)");
+            }
         }
     }
 }

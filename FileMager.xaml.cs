@@ -18,15 +18,17 @@ namespace CodeGenerator
 
             DiffView.OldText = before;
             DiffView.NewText = after;
-            ResultTextEditor.Text = after;
             var extensiton = Path.GetExtension(filePath);
-            ResultTextEditor.SyntaxHighlighting = HighlightingManager.Instance.GetDefinition(extensiton);
+            ResultTextEditor.Text = after;
+            //ResultTextEditor.SetLanguageAsync(extensiton);
+            //ResultTextEditor.SetTextAsync(after);
         }
 
 
-        private void SaveButton_Click(object sender, RoutedEventArgs e)
+        private async void SaveButton_Click(object sender, RoutedEventArgs e)
         {
             // マージ処理を実装
+            //MergedText =  await ResultTextEditor.GetTextAsync();
             MergedText = ResultTextEditor.Text;
             this.DialogResult = true;
         }

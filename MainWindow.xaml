@@ -39,7 +39,8 @@
                     </Grid.ColumnDefinitions>
 
                     <Label Content="Root" Grid.Column="0" HorizontalAlignment="Left"/>
-                    <TextBox x:Name="Root" Grid.Column="1" Text="{Binding RootFolder, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
+                    <TextBox x:Name="Root" Grid.Column="1" Text="{Binding RootFolder, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                             HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
                     <Button Content="📂" Click="SelectRootFolder_Click" Grid.Column="2" HorizontalAlignment="Right"/>
                     <Button Content="🔁" Click="Button_Click" Grid.Column="3" HorizontalAlignment="Right"/>
                 </Grid>

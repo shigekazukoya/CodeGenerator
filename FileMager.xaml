@@ -32,7 +32,7 @@
                                ShowLineNumbers="True"
                                    VerticalScrollBarVisibility="Auto"
                                    HorizontalScrollBarVisibility="Auto"/>
-            
+            <!--<editor:MonacoEditor x:Name="ResultTextEditor" Grid.Row="2"/>-->
         </StackPanel>
 
 

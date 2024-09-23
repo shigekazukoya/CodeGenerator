@@ -2,6 +2,7 @@
 using Microsoft.Win32;
 using Newtonsoft.Json;
 using System;
+using System.ComponentModel;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
@@ -11,7 +12,7 @@ using System.Windows.Controls;
 
 namespace CodeGenerator
 {
-    public partial class MainWindow : Window
+    public partial class MainWindow : Window, INotifyPropertyChanged
     {
         public string RootFolder { get; set; }
         private string ApiKey;
@@ -19,6 +20,9 @@ namespace CodeGenerator
         private ApiService apiService;
         private CodeFileSaver codeFileSaver;
         private int versionCounter = 0;
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+
         public List<CodeVersion> CodeVersions { get; } = new List<CodeVersion>();
 
         public MainWindow()
@@ -93,6 +97,7 @@ namespace CodeGenerator
             if (dialog.ShowDialog() == true)
             {
                 RootFolder = dialog.FolderName;
+                OnPropertyChanged(nameof(RootFolder));
                 UpdateFolderTreeView();
             }
         }
@@ -258,6 +263,11 @@ namespace CodeGenerator
 
             var diffWindow = new DiffWindow(this);
             diffWindow.Show();
+        }
+
+        protected virtual void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 
