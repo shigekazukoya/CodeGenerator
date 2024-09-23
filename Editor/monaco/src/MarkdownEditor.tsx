@@ -1,7 +1,4 @@
-import React, { useRef, useEffect } from 'react';
-import Editor, { EditorProps } from "@monaco-editor/react";
-import * as monaco from "monaco-editor";
-
+import React, { useRef, useEffect, useState } from 'react';
 declare global {
   interface Window {
     setText: (text: string) => void;
@@ -17,56 +14,51 @@ declare global {
 
 const MarkdownEditor: React.FC = () => {
   const editorRef = useRef<any>(null);
-
-  const editorOptions: EditorProps["options"] = {
-    selectOnLineNumbers: true,
-    roundedSelection: false,
-    readOnly: false,
-    cursorStyle: 'line',
-    automaticLayout: true,
-    theme: 'vs-dark',
-    minimap: { enabled: false },
-  };
+  const [MonacoEditor, setMonacoEditor] = useState<any>(null); // MonacoEditor の状態を保持
 
   useEffect(() => {
-    // テキストを設定する関数
-    window.setText = (text: string) => {
-      if (editorRef.current) {
-        editorRef.current.setValue(text);
-      }
-    };
-    window.setLanguage = (language: string) => {
-      if (editorRef.current) {
-        monaco.editor.setModelLanguage(editorRef.current.getModel(), language);
-      }
-    };
+    // Monaco Editor の動的インポート
+    import("@monaco-editor/react").then(({ default: LoadedEditor }) => {
+      setMonacoEditor(() => LoadedEditor); // 読み込んだエディタを状態にセット
+    });
 
-    // テキストを取得する関数
-    window.getText = () => {
-      if (editorRef.current) {
-        console.log("取得");
-        return editorRef.current.getValue();
-      }
-        console.log("とれていない");
-      return '';
-    };
+    let monaco: typeof import("monaco-editor");
 
-    // C#からのメッセージを受け取るイベントリスナー
+    import("monaco-editor").then((monacoEditor) => {
+      monaco = monacoEditor;
+
+      window.setText = (text: string) => {
+        if (editorRef.current) {
+          editorRef.current.setValue(text);
+        }
+      };
+
+      window.setLanguage = (language: string) => {
+        if (editorRef.current) {
+          monaco.editor.setModelLanguage(editorRef.current.getModel(), language);
+        }
+      };
+
+      window.getText = () => {
+        if (editorRef.current) {
+          return editorRef.current.getValue();
+        }
+        return '';
+      };
+
       const handleMessage = (event: MessageEvent) => {
-          console.log("メッセージ受診",event.data);
-      if (event.data.action === 'getText') {
-          console.log("getText");
-        const text = window.getText();
-        window.chrome?.webview?.postMessage({ action: 'getTextResult', text: text });
-        console.log("送った");
-      }
-    };
+        if (event.data.action === 'getText') {
+          const text = window.getText();
+          window.chrome?.webview?.postMessage({ action: 'getTextResult', text });
+        }
+      };
 
-    window.addEventListener('message', handleMessage);
+      window.addEventListener('message', handleMessage);
 
-    return () => {
-      window.removeEventListener('message', handleMessage);
-    };
+      return () => {
+        window.removeEventListener('message', handleMessage);
+      };
+    });
   }, []);
 
   const handleEditorDidMount = (editor: any) => {
@@ -75,18 +67,30 @@ const MarkdownEditor: React.FC = () => {
 
   const handleEditorChange = (value: string | undefined) => {
     console.log(value);
-    // ここで必要に応じて追加の処理を行うことができます
   };
 
   return (
-    <Editor
-      height="90vh"
-      defaultLanguage="markdown"
-      defaultValue=""
-      options={editorOptions}
-      onMount={handleEditorDidMount}
-      onChange={handleEditorChange}
-    />
+    <div>
+      {/* MonacoEditorが読み込まれた後にエディタを表示 */}
+      {MonacoEditor && (
+        <MonacoEditor
+          height="90vh"
+          defaultLanguage="markdown"
+          defaultValue=""
+          options={{
+            selectOnLineNumbers: true,
+            roundedSelection: false,
+            readOnly: false,
+            cursorStyle: 'line',
+            automaticLayout: true,
+            theme: 'vs-dark',
+            minimap: { enabled: false },
+          }}
+          onMount={handleEditorDidMount}
+          onChange={handleEditorChange}
+        />
+      )}
+    </div>
   );
 };
 
