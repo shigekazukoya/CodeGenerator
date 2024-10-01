@@ -32,7 +32,11 @@ namespace CodeGenerator
         {
             InitializeComponent();
             LoadApiKey();
-            apiService = new ApiService(ApiKey);
+            if(ApiKey != null)
+            {
+                apiService = new ApiService(ApiKey);
+            }
+
             codeFileSaver = new CodeFileSaver();
             InitializeLanguageComboBox();
             RootFolder = "C:\\";
@@ -106,6 +110,11 @@ namespace CodeGenerator
                 {
                     SaveApiKey(apiKey);
                     LoadApiKey();
+                    if(ApiKey != null)
+                    {
+                        apiService = new ApiService(ApiKey);
+                    }
+
                     StatusTextBlock.Text = "APIキーを保存しました。";
                 }
                 else
@@ -172,6 +181,12 @@ namespace CodeGenerator
             if (string.IsNullOrWhiteSpace(prompt))
             {
                 StatusTextBlock.Text = "プロンプトを入力してください。";
+                return;
+            }
+
+            if(apiService == null)
+            {
+                StatusTextBlock.Text = "APIKeyを設定してください。";
                 return;
             }
 
